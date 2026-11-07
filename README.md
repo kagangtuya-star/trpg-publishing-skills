@@ -11,7 +11,7 @@
 - 处理朗读框、侧栏、统计块、讲义、表格、插图和图注；不润色或重新翻译正文。
 - 提取带透明蒙版的图片，裁切地图并按词表替换标签，按配置合成页框和去文字章首。
 - 双栏排版、章节扉页、作者和译者署名、章内目录、全书目录、奇偶衬页、PDF 书签与元数据。
-- 串行逐章编译；检查内容覆盖、底部溢出、章节奇偶、书签、字体、页码标签和渲染警告。
+- 默认并行编译章节，提供串行选项；检查内容覆盖、底部溢出、章节奇偶、书签、字体、页码标签和渲染警告。
 
 默认模板使用无素材的纸色背景。贴近原版的边框、扉页、地图和纹理必须从用户有权使用的原版中配置；不会自动判断版权或自动猜出一本书的版式。
 
@@ -44,7 +44,7 @@ trpg-publishing-skills/
 
 ## 系统要求
 
-- 推荐 Linux 或 WSL，Bash；约 8 GB 内存，Vivliostyle 逐章串行。
+- 推荐 Linux 或 WSL，Bash；并行浏览器任务会增加内存占用，约 8 GB 或内存紧张时可用 `--serial`。
 - Python ≥3.12，排除 3.14.1（当前固定 networkx 版本的声明）；验证环境使用 Python 3.13。
 - Node.js ≥22.12、npm；Vivliostyle 11.4.0 的要求来自真实锁文件。推荐受支持的较新 Node 版本。
 - 自行安装的 Chrome 或 Chromium。浏览器路径通过 VIVLIOSTYLE_BROWSER 配置。
@@ -125,8 +125,12 @@ P="$(realpath ../../.venv/bin/python)"
 "$P" scripts/build.py --prep
 "$P" scripts/build.py
 "$P" scripts/build.py --only 1
+"$P" scripts/build.py --jobs 2  # 可选：限制并发数
+"$P" scripts/build.py --serial  # 可选：串行编译
 ```
 --prep 按配置执行英文与图片提取、美术、地图、插图、图注、规范化、HTML、编译和合并。只改 CSS 可直接 build.py；--only 复用其他章节，缺失或起始页改变时仍会补编。首次样章可先只配置第一章，确认设计后再加入其他章节。
+
+默认并发数为 `min(4, CPU 核心数)`，`--jobs N` 指定上限；`--serial` 等同 `--jobs 1`，两选项互斥。准备步骤仍按数据依赖顺序执行，章节使用独立 Vivliostyle 工作目录与系统自动分配的本地端口并行编译。首次先分页，再自动重编起始页变化的章节，最后按原章序合并；页码连续、章首奇偶和 QA 要求不变。已有模块若要启用此行为，需同步当前 `scripts/build.py` 与 `vivliostyle.config.js`（保留本书定制），初始化新模块会自动复制。
 
 最终文件名由 book.json 的 output 决定，默认 output/final/book-zh.pdf。中间 work/pdf/state.json 记录章节起始页、页数和目录。全书至少完整构建两次，并比较状态确认目录收敛；不要把最后一次 --only 当全书验收。
 

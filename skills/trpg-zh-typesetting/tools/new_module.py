@@ -54,7 +54,7 @@ def create(name, pdf, translations, root):
         '# 模组排版\n\n'
         '先读仓库 `skills/trpg-zh-typesetting/SKILL.md`。输入只读，不改译文措辞。\n'
         '配置 `src/config/` 后运行 `python scripts/build.py --prep`，再构建一次使目录收敛。\n'
-        'Vivliostyle 逐章串行；运行 qa_content.py --pdf、qa_overflow.py、qa_structure.py。\n'
+        'Vivliostyle 默认并行（最多 4 个任务）；--jobs N 调整，--serial 串行。运行 qa_content.py --pdf、qa_overflow.py、qa_structure.py。\n'
         '生成的 src/chapters 不手改；检查未命中单元、低文字量页面和全部书签。\n', encoding='utf-8')
     print(f'Created {dest}; configure book/chapters/roles/art JSON before building.')
     return dest

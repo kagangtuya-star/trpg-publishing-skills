@@ -7,7 +7,7 @@ new_module.py 将 scripts、主题、Vivliostyle 配置和脱敏 JSON 复制到�
 - extract_en/extract_images：英文角色流与带蒙版图像。
 - make_assets/maps/figures/optimize_images：配置化边框扉页、地图替字、插图分类、压缩副本。
 - captions：本章图注词表核验。
-- render/build：语义源到 HTML、译者署名、串行 Vivliostyle、占位页删除、衬页、书签和元数据。
+- render/build：语义源到 HTML、译者署名、默认并行 Vivliostyle（--jobs N / --serial）、隔离工作目录与自动端口、起始页校正、占位页删除、衬页、书签和元数据。
 - runtime：模块配置、浏览器和依赖路径。
 - qa_content/qa_overflow/qa_structure/sheet/report_art：内容、版面、结构、联系表和美术报告。
 - show_align：对齐调试。

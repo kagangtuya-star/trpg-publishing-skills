@@ -9,7 +9,7 @@
 5. scripts/make_assets.py 生成边框和去文字扉页；maps.py 渲染地图并替换配置中的标签；figures.py 分类插图（手改 use/kind/size/place/width/before_line/note 会保留）；optimize_images.py 生成印刷副本。
 6. captions.py 生成图注，normalize.py 对齐译稿并生成语义源。qa_content.py 检查覆盖率。角色、地图和图注必须人工确认。
 7. scripts/build.py --only 1 生成样章；确认双栏、字体、译者署名、章节跨页及正文起点。
-8. scripts/build.py --prep 可串行执行提取、素材、图注、语义源到排版合并的整条链。配置确认后至少再运行一次 scripts/build.py。首次 --only 会补建其他缺失章，不能当作只编译一章的性能承诺。
+8. scripts/build.py --prep 按依赖顺序执行提取、素材、图注与语义源，再默认并行编译章节（最多 4 个任务）。--jobs N 调整并发，--serial 或 --jobs 1 串行编译；两种模式都自动校正章节起始页、按章序合并。配置确认后至少再运行一次 scripts/build.py。首次 --only 会补建其他缺失章，不能当作只编译一章的性能承诺。
 9. 全书运行 QA 和 report_art.py，实际查看联系表，编写构建/QA/校对报告。
 
 ## 数据流

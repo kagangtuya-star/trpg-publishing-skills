@@ -17,7 +17,7 @@
 
 - `demos.json`：全部原创正文和主题参数。
 - `theme.css`：印刷样式。开本 603 × 783 pt，各页版心和页脚固定。
-- `build_gallery.py`：生成内联 SVG/HTML，串行调用一次 Vivliostyle，生成书签、页码标签、分册、预览和 QA。
+- `build_gallery.py`：生成内联 SVG/HTML，默认并行编译六套样张（最多 4 个任务），按原顺序合订，再生成书签、页码标签、分册、预览和 QA。`--serial` 使用一个浏览器任务编译全部 12 页。
 - `pdf/`、`previews/`、`index.html`、`qa.json`：可直接查看的成品。
 - `_work/`：临时 HTML、Vivliostyle 配置和字体链接，已忽略。
 
@@ -28,9 +28,14 @@
 export VIVLIOSTYLE_BROWSER=/absolute/path/to/chrome
 export TRPG_DEMO_FONT=/absolute/path/to/cjk.ttf
 .venv/bin/python examples/layout-gallery/build_gallery.py
+# 可选：调整并发，或改用串行
+.venv/bin/python examples/layout-gallery/build_gallery.py --jobs 2
+.venv/bin/python examples/layout-gallery/build_gallery.py --serial
 ```
 
 也支持 `.otf` / `.ttc`；字体变更后须重新检查全部页面。Linux 默认尝试系统文泉驿路径 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`，其他系统请显式设置字体。可用 `--font /path/to/font` 覆盖环境变量。
+
+默认并发数为 `min(4, CPU 核心数)`，`--jobs N` 调整上限；`--serial` 等同 `--jobs 1`，不能与 `--jobs` 同时传入。并行时每套样张在 `_work/<id>/` 单独编译，使用独立字体链接和系统自动分配的端口；PDF 合并、分册与预览均在主线程按原顺序执行。内存紧张时选串行。`--sources-only` 在两种模式下都只生成源码，不启动编译任务。
 
 脚本支持主工作流相同的 `NODE`、`VIVLIOSTYLE_CLI`、`TRPG_TOOLS_ROOT` 环境变量，默认从仓库根寻找 `node_modules/@vivliostyle/cli/dist/cli.js`。`VIVLIOSTYLE_BROWSER` 未设置时尝试 PATH 中的 `google-chrome`、`chromium` 或 `chromium-browser`。浏览器会启动本地渲染服务，受限环境需允许本地监听。
 

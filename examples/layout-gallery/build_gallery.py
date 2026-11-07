@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 import pymupdf
 from PIL import Image
 
@@ -92,10 +93,10 @@ def clock(color, kind):
     return ''.join(parts)+'</svg>'
 
 
-def render(demos):
+def render(demos, offset=0):
     css = (HERE / 'theme.css').read_text(encoding='utf-8')
     out = ['<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>TRPG 中文排版结构样张</title><style>'+css+'</style></head><body>']
-    for i, d in enumerate(demos, 1):
+    for i, d in enumerate(demos, offset + 1):
         cls = ['linear','investigation','hexcrawl','dungeon','factions','campaign'][i-1]
         style = f'--accent:{d["accent"]};--paper:{d["paper"]}'
         def top(page):
@@ -183,7 +184,12 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--sources-only',action='store_true',help='Generate print HTML and offline gallery without launching a browser')
     ap.add_argument('--font',type=Path,default=Path(os.environ.get('TRPG_DEMO_FONT','/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc')))
+    mode=ap.add_mutually_exclusive_group()
+    mode.add_argument('--serial',action='store_true',help='Compile the complete gallery in one browser job')
+    mode.add_argument('--jobs',type=int,default=min(4,os.cpu_count() or 1),help='Maximum simultaneous demo builds (default: up to 4 CPU cores)')
     a=ap.parse_args()
+    if a.jobs < 1: ap.error('--jobs must be a positive integer')
+    jobs=1 if a.serial else a.jobs
     demos=json.loads((HERE/'demos.json').read_text(encoding='utf-8'))
     if len(demos)!=6 or len({d['id'] for d in demos})!=6: raise ValueError('Expected six uniquely named layout studies')
     work=HERE/'_work';work.mkdir(exist_ok=True)
@@ -201,8 +207,35 @@ def main():
     if not cli.is_file(): raise FileNotFoundError('Install dependencies as documented, or set VIVLIOSTYLE_CLI / TRPG_TOOLS_ROOT')
     browser=os.environ.get('VIVLIOSTYLE_BROWSER') or next((shutil.which(n) for n in ('google-chrome','chromium','chromium-browser') if shutil.which(n)),None)
     if not browser: raise RuntimeError('Set VIVLIOSTYLE_BROWSER to a local browser executable')
-    (work/'vivliostyle.config.cjs').write_text("module.exports={title:'TRPG 原创排版样张',language:'zh-CN',entry:['book.html'],output:['all.raw.pdf'],workspaceDir:'.',timeout:1800000};\n",encoding='utf-8')
-    subprocess.run([node,str(cli.resolve()),'build','-c','vivliostyle.config.cjs','--executable-browser',browser,'--log-level','silent'],cwd=work,check=True)
+    command=[node,str(cli.resolve()),'build','-c','vivliostyle.config.cjs','--port','0','--executable-browser',browser,'--log-level','silent']
+    config="module.exports={title:'TRPG 原创排版样张',language:'zh-CN',entry:['book.html'],output:['all.raw.pdf'],workspaceDir:'.',timeout:1800000};\n"
+    print(f'Compilation: {"serial" if jobs==1 else "parallel"}, jobs={jobs}',flush=True)
+    if jobs==1:
+        (work/'vivliostyle.config.cjs').write_text(config,encoding='utf-8')
+        subprocess.run(command,cwd=work,check=True)
+    else:
+        tasks=[]
+        for i,d in enumerate(demos):
+            task=work/d['id'];task.mkdir(exist_ok=True)
+            (task/'book.html').write_text(render([d],offset=i),encoding='utf-8')
+            (task/'vivliostyle.config.cjs').write_text(config,encoding='utf-8')
+            fontlink=task/'demo.ttf'
+            if fontlink.is_symlink(): fontlink.unlink()
+            elif fontlink.exists(): raise FileExistsError('Refusing to replace a non-symlink demo.ttf')
+            fontlink.symlink_to(font)
+            tasks.append(task)
+        def compile_demo(task):
+            subprocess.run(command,cwd=task,check=True)
+            print(f'  {task.name}: compiled',flush=True)
+        with ThreadPoolExecutor(max_workers=jobs) as pool:
+            list(pool.map(compile_demo,tasks))
+        # PDF merging and rendering run on the main thread (PyMuPDF is not thread-safe).
+        merged=pymupdf.open()
+        for task in tasks:
+            with pymupdf.open(task/'all.raw.pdf') as part:
+                if len(part)!=2: raise RuntimeError(f'{task.name}: expected 2 pages, got {len(part)}')
+                merged.insert_pdf(part)
+        merged.save(work/'all.raw.pdf',garbage=3,deflate=True);merged.close()
     export_and_check(work/'all.raw.pdf',demos)
     print('Offline gallery:',HERE/'index.html')
 

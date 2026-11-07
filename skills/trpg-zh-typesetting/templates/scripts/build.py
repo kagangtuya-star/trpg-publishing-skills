@@ -1,15 +1,18 @@
 """Build the whole book.
 
-  python scripts/build.py              # render + compile all parts (serially) + merge
+  python scripts/build.py              # render + parallel chapter compilation + merge
+  python scripts/build.py --serial     # compile sequentially
+  python scripts/build.py --jobs 2     # limit concurrent browser jobs
   python scripts/build.py --prep       # also regenerate assets, maps, figures, semantic sources
   python scripts/build.py --only 3     # recompile only chapter 3 (others reused), then merge
 
-Each part (front matter, chapters 1-6) is compiled by Vivliostyle separately (memory-safe),
-with its starting page number passed in, so folios are continuous.  Chapters start on a
+Each part is compiled in an isolated Vivliostyle workspace. Chapter starts are reconciled
+after parallel pagination, so folios are continuous. Chapters start on a
 verso (opener spread); a decorative pad page is inserted where needed.  The merged PDF gets
 a full outline (chapters / parts / sections / keyed areas), page labels and metadata.
 """
 import json, os, re, subprocess, sys, time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import pymupdf
 sys.path.insert(0, os.path.dirname(__file__))
 from zhparse import ROOT, chapter_numbers
@@ -27,16 +30,86 @@ def sh(cmd, env=None):
         print(r.stdout[-3000:], r.stderr[-3000:]); raise SystemExit(f'failed: {cmd}')
     return time.time() - t
 
-def compile_html(name):
+def compile_raw(name):
+    """Workers only run external processes; all PyMuPDF work stays on the main thread."""
+    return sh([os.environ.get('NODE', 'node'), V, 'build', '--port', '0',
+               '--executable-browser', browser_path(), '--log-level', 'silent'],
+              env={'VS_TITLE': BOOK['title'], 'VS_ENTRY': f'build/{name}.html',
+                   'VS_OUT': f'work/pdf/{name}.raw.pdf',
+                   'VS_WORKSPACE': f'work/vivliostyle/{name}'})
+
+def finish_html(name, dt):
     out = os.path.join(WORK, f'{name}.raw.pdf')
-    dt = sh([os.environ.get('NODE', 'node'), V, 'build', '--executable-browser', browser_path(), '--log-level', 'silent'],
-            env={'VS_TITLE': BOOK['title'], 'VS_ENTRY': f'build/{name}.html', 'VS_OUT': f'work/pdf/{name}.raw.pdf'})
     d = pymupdf.open(out)
     if name.startswith('ch'): d.delete_page(0)          # dummy leading page
     d.save(os.path.join(WORK, f'{name}.pdf'), garbage=3, deflate=True)
     n = len(d); d.close()
     print(f'  {name}: {n} pages, {dt:.0f}s')
     return n
+
+def compile_html(name):
+    return finish_html(name, compile_raw(name))
+
+def compile_many(names, jobs):
+    if jobs == 1:
+        return {name: compile_html(name) for name in names}
+    elapsed = {}
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        pending = {pool.submit(compile_raw, name): name for name in names}
+        try:
+            for future in as_completed(pending):
+                name = pending[future]
+                elapsed[name] = future.result()
+        except BaseException:
+            for future in pending: future.cancel()
+            raise
+    # Do not replace cached chapter PDFs when any compiler process failed.
+    return {name: finish_html(name, elapsed[name]) for name in names}
+
+def chapter_layout(state):
+    page = state['front_pages'] + 1
+    state['front_pad'] = page % 2 == 1
+    if state['front_pad']: page += 1
+    starts = {}
+    for ch in chapter_numbers():
+        starts[ch] = page
+        key = f'ch{ch}'
+        page += state.get(f'{key}_pages', 2)
+        state[f'{key}_pad'] = page % 2 == 1
+        if state[f'{key}_pad']: page += 1
+    return starts, page - 1
+
+def compile_chapters(state, only, jobs):
+    if jobs == 1:
+        # A serial build can use each preceding chapter's actual count immediately.
+        for ch in chapter_numbers():
+            starts, _ = chapter_layout(state)
+            key, page = f'ch{ch}', starts[ch]
+            if (only is None or only == str(ch) or state.get(f'{key}_start') != page
+                    or f'{key}_pages' not in state or not os.path.exists(os.path.join(WORK, f'{key}.pdf'))):
+                render.chapter_doc(ch, page)
+                state[f'{key}_pages'] = compile_html(key)
+                state[f'{key}_start'] = page
+        return chapter_layout(state)
+    max_passes = len(chapter_numbers()) + 1
+    for attempt in range(max_passes):
+        starts, total = chapter_layout(state)
+        needed = [ch for ch in chapter_numbers()
+                  if (attempt == 0 and (only is None or only == str(ch)))
+                  or state.get(f'ch{ch}_start') != starts[ch]
+                  or f'ch{ch}_pages' not in state
+                  or not os.path.exists(os.path.join(WORK, f'ch{ch}.pdf'))]
+        if not needed: return starts, total
+        print(f'Chapter pagination pass {attempt + 1}: {len(needed)} parts, up to {jobs} jobs')
+        for ch in needed: render.chapter_doc(ch, starts[ch])
+        counts = compile_many([f'ch{ch}' for ch in needed], jobs)
+        for ch in needed:
+            state[f'ch{ch}_pages'] = counts[f'ch{ch}']
+            state[f'ch{ch}_start'] = starts[ch]
+    starts, total = chapter_layout(state)
+    if any(state.get(f'ch{ch}_start') != starts[ch] for ch in chapter_numbers()):
+        raise SystemExit(f'Chapter pagination did not stabilize after {max_passes} passes; inspect HTML/CSS and retry with --serial')
+    return starts, total
 
 def pad_page(path):
     """decorative recto filler page (frame + crown emblem)."""
@@ -89,8 +162,14 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--prep', action='store_true')
     ap.add_argument('--only', type=int, choices=chapter_numbers())
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument('--serial', action='store_true', help='Compile one part at a time (equivalent to --jobs 1)')
+    mode.add_argument('--jobs', type=int, default=min(4, os.cpu_count() or 1),
+                      help='Maximum concurrent chapter builds (default: up to 4 CPU cores)')
     ns = ap.parse_args()
-    args = sys.argv[1:]
+    if ns.jobs < 1: ap.error('--jobs must be a positive integer')
+    jobs = 1 if ns.serial else ns.jobs
+    print(f'Compilation: {"serial" if jobs == 1 else "parallel"}, jobs={jobs}')
     os.makedirs(WORK, exist_ok=True); os.makedirs(os.path.dirname(FINAL), exist_ok=True)
     if ns.prep:
         for s in ('extract_en.py', 'extract_images.py', 'make_assets.py', 'maps.py', 'figures.py', 'optimize_images.py', 'captions.py', 'normalize.py'):
@@ -110,25 +189,8 @@ def main():
             placeholder.extend(dict(level='part', title=t, page=0) for lvl, t in outline_items(ch) if lvl == 2)
         render.front_doc(1, toc or placeholder)
         state['front_pages'] = compile_html('front')
-    page = state['front_pages'] + 1
-    if (page % 2) == 1:   # chapters must start on an even (verso) page
-        state['front_pad'] = True; page += 1
-    else:
-        state['front_pad'] = False
-    # 2) chapters
-    starts = {}
-    for ch in chapter_numbers():
-        starts[ch] = page
-        key = f'ch{ch}'
-        if only is None or only == str(ch) or state.get(f'{key}_start') != page or not os.path.exists(os.path.join(WORK, f'{key}.pdf')):
-            render.chapter_doc(ch, page)
-            state[f'{key}_pages'] = compile_html(key)
-            state[f'{key}_start'] = page
-        n = state[f'{key}_pages']
-        page += n
-        state[f'{key}_pad'] = (page % 2 == 1)
-        if state[f'{key}_pad']: page += 1
-    total = page - 1
+    # 2) Chapters paginate concurrently, then recompile only changed starting folios.
+    starts, total = compile_chapters(state, only, jobs)
     # 3) TOC + outline
     toc = [dict(level='front', title='引　言', page=state['front_pages'] - state.get('intro_pages', 0))] if has_intro else []
     outline = []

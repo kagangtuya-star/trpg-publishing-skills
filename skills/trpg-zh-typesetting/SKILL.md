@@ -12,7 +12,7 @@ description: 将用户自行提供且有权使用的英文 TRPG PDF 与中文 Ma
 - 用户输入只读；初始化工具复制输入并将副本设为只读。不改译文措辞；疑似笔误、译名差异记入校对报告。标题、表格、转义等格式调整要可追溯。
 - 图注和地图新增文字优先逐字取自对应章译稿；组合短语标为 composed，并人工复核。
 - 美术来自用户有权使用的本地原版。不得将原版 PDF、译文、图片、字体或产物放入本 Skill 仓库。
-- Vivliostyle 逐章串行运行。输入和素材不足时不猜测书籍页码或图片 xref。
+- Vivliostyle 默认并行编译，最多 4 个任务；`--jobs N` 调整，`--serial`（或 `--jobs 1`）串行。保留各任务的工作目录与端口隔离、章节起始页校正和按序合并。输入和素材不足时不猜测书籍页码或图片 xref。
 - 不自动安装依赖或下载浏览器、字体。构建、内容核验和视觉审查只报告实际完成的结果。
 - 本 Skill 不授予发布、提交或对外发送文件的权限；按用户当前授权操作。
 
@@ -25,6 +25,9 @@ python skills/trpg-zh-typesetting/tools/new_module.py my-book /path/original.pdf
 cd modules/my-book
 ../../.venv/bin/python scripts/build.py --prep
 ../../.venv/bin/python scripts/build.py
+# 可选：限制并发或切换串行
+../../.venv/bin/python scripts/build.py --jobs 2
+../../.venv/bin/python scripts/build.py --serial
 ../../.venv/bin/python scripts/qa_content.py --pdf
 ../../.venv/bin/python scripts/qa_overflow.py
 ../../.venv/bin/python scripts/qa_structure.py
@@ -38,7 +41,7 @@ cd modules/my-book
 1. 盘点字体、配色、章节范围、页码、译者附加物行号和美术。角色规则按顺序匹配，未知字体为 OTHER，需人工处理。
 2. 配置结构、英文角色规则、美术边框与扉页。先做一章；统计块分类和中英对齐是启发式，必须核对。
 3. 提取素材、地图替字、分类、图注、语义源。检查未命中单元和 drop 明细，禁止静默丢行。
-4. 样章确认版心、字体、扉页和译者署名，再逐章串行构建全书。至少构建两次，目录页数和章节起始页须稳定。
+4. 样章确认版心、字体、扉页和译者署名，再默认并行构建全书；内存紧张时显式选串行。首次构建或上游页数变化会自动补编页码受影响的章节。至少构建两次，目录页数和章节起始页须稳定。
 5. 运行 QA，实际查看联系表及可疑页。覆盖率仅用于定位，不能替代人工验收。交付构建、QA、校对、美术映射报告。
 
 ## 按需参考

@@ -1,6 +1,6 @@
 # 版式系统
 
-语义源与表现分离：normalize.py 负责结构，render.py 负责 HTML，theme.css 负责排版，build.py 负责串行编译和合并。
+语义源与表现分离：normalize.py 负责结构，render.py 负责 HTML，theme.css 负责排版，build.py 负责默认并行编译、起始页校正和按序合并；--serial 切换串行。
 
 默认开本 603×783 pt，双栏、17 pt 栏距，正文 9.1/15.4 pt。左右页内外边距对调；页边显示书名/章名和对应原版页码。book.json 覆盖开本和边距，细部组件坐标仍需人工适配。
 

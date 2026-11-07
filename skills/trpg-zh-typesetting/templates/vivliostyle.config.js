@@ -4,6 +4,6 @@ module.exports = {
   language: 'zh-CN',
   entry: [process.env.VS_ENTRY || 'build/ch1.html'],
   output: [process.env.VS_OUT || 'work/pdf/ch1.pdf'],
-  workspaceDir: '.',
+  workspaceDir: process.env.VS_WORKSPACE || 'work/vivliostyle/manual',
   timeout: 1800000,
 };

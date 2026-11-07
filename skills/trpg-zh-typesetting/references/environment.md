@@ -1,6 +1,6 @@
 # 环境与依赖
 
-完整安装命令见仓库根 README.md。需要 Python ≥3.12（排除 3.14.1）、Node ≥22.12、npm、Chrome/Chromium。推荐 Linux 或 WSL，8 GB 内存时逐章串行。Node 版本来自真实 package-lock.json 中 Vivliostyle 11.4.0 的 engines；不要沿用旧项目 Node 18 的要求。
+完整安装命令见仓库根 README.md。需要 Python ≥3.12（排除 3.14.1）、Node ≥22.12、npm、Chrome/Chromium。推荐 Linux 或 WSL；默认并行编译，最多 4 个浏览器任务，--jobs N 可调。8 GB 或内存紧张时可用 --serial / --jobs 1。Node 版本来自真实 package-lock.json 中 Vivliostyle 11.4.0 的 engines；不要沿用旧项目 Node 18 的要求。
 
 Python 直接依赖在 pyproject.toml，requirements.txt 固定直接和传递依赖版本。它是版本快照，非哈希锁；未生成或虚构 uv.lock。不要自动安装。用户安装命令为：
 ```bash

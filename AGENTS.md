@@ -7,7 +7,7 @@
 - 输入 PDF 与译稿只读，不改译文措辞；`src/chapters/` 是模块生成物，应修改配置或模块脚本后重建。
 - 不提交原版、译文正文、第三方美术、地图、封面、字体、用户生成的 PDF、依赖目录、虚拟环境或缓存。演示与测试使用原创占位数据。仅 `examples/layout-gallery/pdf/` 与 `previews/` 允许提交由该目录原创源码重建、经过 QA 与视觉检查的样张 PDF/JPG；不提交 `_work/` 或字体文件。
 - Python 直接依赖见 `pyproject.toml`，固定版本快照见 `requirements.txt`；Node 使用真实 `package-lock.json`。不自动安装依赖，不手编解析器锁文件。
-- Vivliostyle 必须逐章串行。浏览器路径使用 `VIVLIOSTYLE_BROWSER`，依赖根和字体路径按 Skill 文档配置。
+- Vivliostyle 默认并行编译章节，最多 4 个任务；`--jobs N` 调整，`--serial` 或 `--jobs 1` 串行。各任务使用独立工作目录和自动端口；页码校正后按章序合并，PyMuPDF 操作留在主线程。浏览器路径使用 `VIVLIOSTYLE_BROWSER`，依赖根和字体路径按 Skill 文档配置。
 - 修改后从仓库根运行 `python tools/validate_repository.py`、`python -m unittest discover -s tests -v`，解释器需具备 README 声明的依赖；提交前执行 `git diff --check`。
 - 版式/合并逻辑变更还需用原创示例真实编译并做 QA、实际看图；无浏览器集成测试不能替代视觉验收。
 - 整体授权状态见 README；未经权利人确认，不补写推测的代码许可证。
