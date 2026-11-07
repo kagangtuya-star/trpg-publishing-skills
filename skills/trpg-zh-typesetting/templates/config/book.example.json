@@ -1,0 +1,12 @@
+{
+  "title": "星灯驿站",
+  "en": "The Star Lantern Stop",
+  "subtitle": "原创排版示例",
+  "author": "示例作者",
+  "subject": "TRPG 中文排版",
+  "keywords": "TRPG,中文排版",
+  "output": "book-zh.pdf",
+  "tools_root": "../..",
+  "page_size": [603, 783],
+  "margins": [66, 40, 84, 88]
+}

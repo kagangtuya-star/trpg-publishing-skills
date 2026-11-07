@@ -1,0 +1,6 @@
+interface:
+  display_name: "TRPG 中文 PDF 排版"
+  short_description: "将英文 TRPG 原版 PDF 与中文译稿排成可重建、带美术与质量检查的中文版"
+  default_prompt: "使用 $trpg-zh-typesetting，盘点我提供的英文 PDF 与中文 Markdown 译稿，配置版式并构建中文 PDF，完成 QA。"
+policy:
+  allow_implicit_invocation: true

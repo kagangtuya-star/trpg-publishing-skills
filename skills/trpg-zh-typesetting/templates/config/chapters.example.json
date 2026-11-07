@@ -1,0 +1,15 @@
+{
+  "1": {
+    "title": "星灯驿站",
+    "en": "The Star Lantern Stop",
+    "author_en": "Example Author",
+    "author_zh": "作者：示例作者",
+    "translator": "示例译者",
+    "pages": [1, 1],
+    "title_line": 1,
+    "drop": [],
+    "parts": {},
+    "insert_parts": [],
+    "maps": []
+  }
+}

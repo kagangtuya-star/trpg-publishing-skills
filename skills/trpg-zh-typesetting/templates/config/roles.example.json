@@ -1,0 +1,7 @@
+{
+  "rules": [
+    {"font_prefix": "Helvetica-Bold", "min_size": 18, "role": "H2"},
+    {"font_prefix": "Helvetica", "role": "BODY"}
+  ],
+  "default_role": "OTHER"
+}

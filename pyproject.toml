@@ -1,0 +1,16 @@
+[project]
+name = "trpg-publishing-skills"
+version = "0.1.0"
+description = "TRPG 中文 PDF 排版 Skill 与模块模板"
+readme = "README.md"
+requires-python = ">=3.12,!=3.14.1"
+dependencies = [
+  "pymupdf==2.1",
+  "pillow==13.0.0",
+  "numpy==2.5.4",
+  "fonttools==4.68.0",
+  "PyYAML==6.0.3",
+]
+
+[tool.uv]
+package = false
