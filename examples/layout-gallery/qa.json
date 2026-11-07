@@ -1,0 +1,73 @@
+{
+  "engine": "Vivliostyle / Chromium",
+  "original_content": true,
+  "total_pages": 12,
+  "styles": [
+    {
+      "id": "01-linear",
+      "pages": 2,
+      "missing_text": [],
+      "out_of_bounds": [],
+      "font_types": [
+        "Type0"
+      ],
+      "render_warnings": "",
+      "bytes": 175195
+    },
+    {
+      "id": "02-investigation",
+      "pages": 2,
+      "missing_text": [],
+      "out_of_bounds": [],
+      "font_types": [
+        "Type0"
+      ],
+      "render_warnings": "",
+      "bytes": 175629
+    },
+    {
+      "id": "03-hexcrawl",
+      "pages": 2,
+      "missing_text": [],
+      "out_of_bounds": [],
+      "font_types": [
+        "Type0"
+      ],
+      "render_warnings": "",
+      "bytes": 177302
+    },
+    {
+      "id": "04-dungeon",
+      "pages": 2,
+      "missing_text": [],
+      "out_of_bounds": [],
+      "font_types": [
+        "Type0"
+      ],
+      "render_warnings": "",
+      "bytes": 206090
+    },
+    {
+      "id": "05-factions",
+      "pages": 2,
+      "missing_text": [],
+      "out_of_bounds": [],
+      "font_types": [
+        "Type0"
+      ],
+      "render_warnings": "",
+      "bytes": 174931
+    },
+    {
+      "id": "06-campaign",
+      "pages": 2,
+      "missing_text": [],
+      "out_of_bounds": [],
+      "font_types": [
+        "Type0"
+      ],
+      "render_warnings": "",
+      "bytes": 180854
+    }
+  ]
+}

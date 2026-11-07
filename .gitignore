@@ -31,6 +31,11 @@ __pycache__/
 *.jpg
 *.jpeg
 *.webp
+
+# Only the original, reviewable layout studies are distributed as finished files.
+/examples/layout-gallery/_work/
+!examples/layout-gallery/pdf/*.pdf
+!examples/layout-gallery/previews/*.jpg
 *.zip
 *.pem
 *.key

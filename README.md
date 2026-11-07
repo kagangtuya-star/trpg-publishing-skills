@@ -157,6 +157,16 @@ pdffonts output/final/book-zh.pdf
 ```
 仅用仓库中原创占位文本和程序绘图，在 local/demo-input 与 modules/demo 生成本地测试输入和配置；目标已存在则拒绝。准备字体后，在 modules/demo 执行上述完整构建命令。也可 --root /tmp/my-trpg-demo 生成到独立目录。示例生成的 PDF、图片、译稿副本和输出不会提交。
 
+## 排版成品样张
+
+[打开离线画廊](examples/layout-gallery/index.html) · [下载 12 页合订本](examples/layout-gallery/pdf/trpg-layout-collection.pdf) · [源码与重建说明](examples/layout-gallery/README.md)
+
+提供六套两页成品，覆盖线性章节、线索调查、荒野六角探索、编号地城、城市派系与长篇战役。每套包含独立 PDF 和双页预览，展示朗读框、节点图、原创地图、场景威胁、随机表、派系时钟及跨章导航。全部正文与图形均为原创、系统中立的排版示例；不复刻任何商业模组的美术。
+
+![六角探索双页样张](examples/layout-gallery/previews/03-hexcrawl.jpg)
+
+这些成品通过独立的画廊构建脚本生成，适合选版式与比较信息结构。它们不替代真实模组的提取、对齐和完整 QA，也不改变通用模块模板。仓库仅为这组原创成品放行 PDF/JPG，用户书籍与其他生成物仍被忽略。
+
 ## 使用 Codex 或 Claude Code
 
 保留整个仓库。最稳妥的方式是在 Agent 中明确给出 Skill 的绝对路径，并要求先读取 SKILL.md 和引用文档。无需复制素材到 Skill 安装目录。
